@@ -224,14 +224,38 @@ def write_all_reads(output_dir, n_batches, transcrits_sequences, transcript_read
         print(p.map(helper_reads_writer, range(n_batches)))
     combine_files(output_dir)
 
+def truncate(seq, length=80):
+    return '\n'.join([seq[n:n+length] for n in range(0, len(seq), length)])
+
 if __name__=='__main__':
     parser = argparse.ArgumentParser(description='Generate syntetic rna seq dataset')
     parser.add_argument('fasta', type=str,
                         help='fasta containing all transcript sequences')
     parser.add_argument('output_dir', type=str,
                         help='directory for all outputs')
+    parser.add_argument('n_batches', type=int,
+                        help='number of batches and CPUs')
+
 
     args = parser.parse_args()
-    
+     
     transcrits_sequences = Fasta(args.fasta)
     output_dir = args.output_dir
+    selected_transcrits = list(transcrits_sequences.keys())
+    bins_made, count_adjusted = generate_reads_distribution(output_dir)
+
+    if not os.path.exists(opj(output_dir, 'transcript_reads.pkl')):
+        transcript_reads=selection_transcrit(bins_made, count_adjusted, selected_transcrits)
+        pickle.dump(transcript_reads, open(opj(output_dir, 'transcript_reads.pkl'), 'wb'))
+    else:
+        transcript_reads = pickle.load(open(opj(output_dir, 'transcript_reads.pkl'), 'rb'))
+
+    total_reads = sum(transcript_reads.values())
+
+    if os.path.exists(opj(output_dir, 'quality_pmfs.pkl')):
+        pmfs = pickle.load(open(opj(output_dir, 'quality_pmfs.pkl'), 'rb'))
+    else:
+        pmfs =get_quality_pmfs(output_dir, total_reads)
+        pickle.dump(pmfs, open(opj(output_dir, 'quality_pmfs.pkl'), 'wb'))
+
+    write_all_reads(output_dir, args.n_batches, transcrits_sequences, transcript_reads)
