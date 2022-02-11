@@ -213,16 +213,9 @@ def combine_files(output_dir):
                         f_write.write(line)
                 # TODO delete batch file
 
-def write_all_reads(output_dir, n_batches, transcrits_sequences, transcript_reads):
-    batches = get_batches(n_batches, transcript_reads)
+def helper_reads_writer(batch_num):
+    write_batch_reads(75, batches[batch_num], opj(output_dir, f'Reads_simulation_{batch_num}.fastq'), transcrits_sequences)
 
-    def helper_reads_writer(batch_num):
-        write_batch_reads(75, batches[batch_num], opj(output_dir, f'Reads_simulation_{batch_num}.fastq'), transcrits_sequences)
-
-    #Multiprocessing
-    with Pool(n_batches) as p:
-        print(p.map(helper_reads_writer, range(n_batches)))
-    combine_files(output_dir)
 
 def truncate(seq, length=80):
     return '\n'.join([seq[n:n+length] for n in range(0, len(seq), length)])
@@ -241,6 +234,7 @@ if __name__=='__main__':
      
     transcrits_sequences = Fasta(args.fasta)
     output_dir = args.output_dir
+    n_batches = args.n_batches
     selected_transcrits = list(transcrits_sequences.keys())
     bins_made, count_adjusted = generate_reads_distribution(output_dir)
 
@@ -258,4 +252,8 @@ if __name__=='__main__':
         pmfs =get_quality_pmfs(output_dir, total_reads)
         pickle.dump(pmfs, open(opj(output_dir, 'quality_pmfs.pkl'), 'wb'))
 
-    write_all_reads(output_dir, args.n_batches, transcrits_sequences, transcript_reads)
+    batches = get_batches(n_batches, transcript_reads)
+    #Multiprocessing
+    with Pool(n_batches) as p:
+        print(p.map(helper_reads_writer, range(n_batches)))
+    combine_files(output_dir)
