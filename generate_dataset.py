@@ -207,7 +207,7 @@ def write_batch_reads(len_read, nom_transcrit_nombre_reads, out_file, transcrits
 def combine_files(output_dir):
     with open(opj(output_dir, 'Reads_simulation.fastq'), 'w') as f_write:
         for file in os.listdir(output_dir):
-            if 'Reads_simulation' in file:
+            if 'Reads_simulation_' in file:
                 with open(opj(output_dir, file), 'r') as f_read:
                     for line in f_read:
                         f_write.write(line)
