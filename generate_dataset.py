@@ -11,7 +11,7 @@ import os
 from multiprocessing import Pool
 from os.path import join as opj
 import argparse
-
+# TODO randomize batches quality strings
 ascii_chars = ['!',
 
  '"',
@@ -157,7 +157,7 @@ def selection_transcrit(bins_made, count, selected_transcrits): # TODO Better fu
 
 def get_quality_pmfs(output_dir, total_reads, len_read = 75, quality_bins_made = np.linspace(0, 40, 40)):
     positions = list(range(1, len_read+1))
-    scales = [1 + position * (4/len_read) for position in positions]
+    scales = [0.5 + position * (2/len_read) for position in positions]
     data = []
     pmfs = []
     
