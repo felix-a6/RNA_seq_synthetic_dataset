@@ -179,11 +179,15 @@ def get_quality_string(len_read):
 
 def make_reads(nom_transcrit, nombre_reads, len_read, transcrits_sequences):
     reads=[]
-    transcrit = transcrits_sequences[nom_transcrit]
+    transcrit = str(transcrits_sequences[nom_transcrit])
     for _ in range(nombre_reads):
         try:
             position_read = random.randint(0,len(transcrit)-len_read-1)
-            reads.append(transcrit[position_read:(position_read+len_read)])
+            read = transcrit[position_read:(position_read+len_read)]
+            if len(read) == 75:
+                reads.append((read, position_read))
+            else:
+                print(f'len_err : {nom_transcrit}, len_read:{len(read)}, position_read:{position_read}, nombre_reads:{nombre_reads}', flush = True)
         except Exception as e:
             print(len(transcrit), nom_transcrit)
             raise e
@@ -200,9 +204,10 @@ def write_batch_reads(len_read, nom_transcrit_nombre_reads, out_file, transcrits
     with open(out_file,'w') as file_fastq:
         for n, (nom_transcrit, nombre_reads) in enumerate(nom_transcrit_nombre_reads):
             reads = make_reads(nom_transcrit, nombre_reads, len_read, transcrits_sequences)
-            for read in reads:
+            for read, position_read in reads:
                 quality_string = get_quality_string(len_read)
-                file_fastq.write('\n'.join(['@' + read.fancy_name, str(read), '+', quality_string]) + '\n')
+                read_name = f'@{nom_transcrit}:{position_read}'
+                file_fastq.write('\n'.join([read_name, read, '+', quality_string]) + '\n')
 
 def combine_files(output_dir):
     with open(opj(output_dir, 'Reads_simulation.fastq'), 'w') as f_write:
