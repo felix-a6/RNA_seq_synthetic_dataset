@@ -200,12 +200,19 @@ def get_batches(n_batches, transcript_reads, output_dir, transcrits_sequences, p
 
 def write_batch_reads(len_read, batch, out_file, transcrits_sequences, pmfs):
     with open(out_file,'w') as file_fastq:
+        print_counter = 0
         for n, (nom_transcrit, nombre_reads) in enumerate(batch):
+            if print_counter == 100:
+                print(nom_transcrit, nombre_reads)
             reads = make_reads(nom_transcrit, nombre_reads, len_read, transcrits_sequences)
             for read, position_read in reads:
                 quality_string = get_quality_string(len_read, pmfs)
                 read_name = f'@{nom_transcrit}:{position_read}'
                 file_fastq.write('\n'.join([read_name, read, '+', quality_string]) + '\n')
+                if print_counter == 100:
+                    print(read_name)
+                    print_counter = 0
+            print_counter += 1
 
 def combine_files(output_dir):
     with open(opj(output_dir, 'Reads_simulation.fastq'), 'w') as f_write:
