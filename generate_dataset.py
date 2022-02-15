@@ -203,14 +203,14 @@ def write_batch_reads(len_read, batch, out_file, transcrits_sequences, pmfs):
         print_counter = 0
         for n, (nom_transcrit, nombre_reads) in enumerate(batch):
             if print_counter == 100:
-                print(nom_transcrit, nombre_reads)
+                print(nom_transcrit, nombre_reads, flush = True)
             reads = make_reads(nom_transcrit, nombre_reads, len_read, transcrits_sequences)
             for read, position_read in reads:
                 quality_string = get_quality_string(len_read, pmfs)
                 read_name = f'@{nom_transcrit}:{position_read}'
                 file_fastq.write('\n'.join([read_name, read, '+', quality_string]) + '\n')
                 if print_counter == 100:
-                    print(read_name)
+                    print(read_name, flush = True)
                     print_counter = 0
             print_counter += 1
 
@@ -270,5 +270,5 @@ if __name__=='__main__':
 
     #Multiprocessing
     with Pool(n_batches) as p:
-        print(p.starmap(write_batch_reads, batches))
+        p.starmap(write_batch_reads, batches)
     combine_files(output_dir)
