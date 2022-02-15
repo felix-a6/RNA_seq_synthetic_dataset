@@ -109,9 +109,9 @@ ascii_chars = ['!',
  '~']
 quality_levels = ascii_chars[:41][::-1]
 
-def nombre_reads_random(bins, numéro_bins):
-    debut_bins = bins[numéro_bins]
-    fin_bins = bins[numéro_bins+1] 
+def nombre_reads_random(bins, numero_bins):
+    debut_bins = bins[numero_bins]
+    fin_bins = bins[numero_bins+1] 
     return random.randint(debut_bins, fin_bins)  
 
 def generate_reads_distribution(output_dir, max_n_reads = 4000, n_bins = 251, n_transcript = 40000, high = (1000, 500), low = (0, 500)):
@@ -141,18 +141,16 @@ def generate_reads_distribution(output_dir, max_n_reads = 4000, n_bins = 251, n_
     
     return bins_made, count_adjusted
 
-def selection_transcrit(bins_made, count, selected_transcrits): # TODO Better function name
+def selection_transcrit(bins_made, counts, selected_transcrits): # TODO Better function name
     selected_transcrits_copie = selected_transcrits.copy()
-    numéro_bins = 0
     reads_par_transcrit = dict()
-    for count in count:
-        x=0
+    for numero_bins, count in enumerate(counts):
+        x = 0
         while x<count:
             len_selected_transcrits = len(selected_transcrits_copie)
             transcrit = selected_transcrits_copie.pop(random.randint(0, len_selected_transcrits-1))
-            reads_par_transcrit.update({transcrit:nombre_reads_random(bins_made, numéro_bins)})
+            reads_par_transcrit.update({transcrit:nombre_reads_random(bins_made, numero_bins)})
             x = x+1
-        numéro_bins = numéro_bins+1
     return reads_par_transcrit
 
 def get_quality_pmfs(output_dir, total_reads, len_read = 75, quality_bins_made = np.linspace(0, 40, 40)):
@@ -174,38 +172,38 @@ def get_quality_pmfs(output_dir, total_reads, len_read = 75, quality_bins_made =
     pickle.dump(data, open(opj(output_dir, 'read_quality_distribution.pkl'), 'wb'))
     return pmfs
 
-def get_quality_string(len_read):
+def get_quality_string(len_read, pmfs):
     return ''.join([np.random.choice(quality_levels[:-2], p = pmfs[n]) for n in range(0, len_read)])
 
 def make_reads(nom_transcrit, nombre_reads, len_read, transcrits_sequences):
     reads=[]
     transcrit = str(transcrits_sequences[nom_transcrit])
     for _ in range(nombre_reads):
-        try:
-            position_read = random.randint(0,len(transcrit)-len_read-1)
-            read = transcrit[position_read:(position_read+len_read)]
-            if len(read) == 75:
-                reads.append((read, position_read))
-            else:
-                print(f'len_err : {nom_transcrit}, len_read:{len(read)}, position_read:{position_read}, nombre_reads:{nombre_reads}', flush = True)
-        except Exception as e:
-            print(len(transcrit), nom_transcrit)
-            raise e
+        position_read = random.randint(0,len(transcrit)-len_read-1)
+        read = transcrit[position_read:(position_read+len_read)]
+        if len(read) == 75:
+            reads.append((read, position_read))
+        else:
+            print(f'len_err : {nom_transcrit}, len_read:{len(read)}, position_read:{position_read}, nombre_reads:{nombre_reads}', flush = True)
     return reads
 
-def get_batches(n_batches, transcript_reads):
+def get_batches(n_batches, transcript_reads, output_dir, transcrits_sequences, pmfs, len_reads):
     batch_size = int(np.ceil(1/n_batches * len(transcript_reads)))
     transcript_reads_shuffle = list(transcript_reads.items())
-    random.shuffle(transcript_reads_shuffle)
-    batches = [transcript_reads_shuffle[n:n+batch_size] for n in range(0,  len(transcript_reads_shuffle), batch_size)]
+    random.shuffle(transcript_reads_shuffle) #TODO enlever list comprehention
+    batches = []
+    for n in range(0,  len(transcript_reads_shuffle), batch_size):
+        out_file = opj(output_dir, f'Reads_simulation_{n}.fastq')
+        batch = transcript_reads_shuffle[n:n+batch_size]
+        batches.append((len_reads, batch, out_file, transcrits_sequences, pmfs))  
     return batches
 
-def write_batch_reads(len_read, nom_transcrit_nombre_reads, out_file, transcrits_sequences):
+def write_batch_reads(len_read, batch, out_file, transcrits_sequences, pmfs):
     with open(out_file,'w') as file_fastq:
-        for n, (nom_transcrit, nombre_reads) in enumerate(nom_transcrit_nombre_reads):
+        for n, (nom_transcrit, nombre_reads) in enumerate(batch):
             reads = make_reads(nom_transcrit, nombre_reads, len_read, transcrits_sequences)
             for read, position_read in reads:
-                quality_string = get_quality_string(len_read)
+                quality_string = get_quality_string(len_read, pmfs)
                 read_name = f'@{nom_transcrit}:{position_read}'
                 file_fastq.write('\n'.join([read_name, read, '+', quality_string]) + '\n')
 
@@ -217,10 +215,6 @@ def combine_files(output_dir):
                     for line in f_read:
                         f_write.write(line)
                 # TODO delete batch file
-
-def helper_reads_writer(batch_num):
-    write_batch_reads(75, batches[batch_num], opj(output_dir, f'Reads_simulation_{batch_num}.fastq'), transcrits_sequences)
-
 
 def truncate(seq, length=80):
     return '\n'.join([seq[n:n+length] for n in range(0, len(seq), length)])
@@ -257,8 +251,9 @@ if __name__=='__main__':
         pmfs =get_quality_pmfs(output_dir, total_reads)
         pickle.dump(pmfs, open(opj(output_dir, 'quality_pmfs.pkl'), 'wb'))
 
-    batches = get_batches(n_batches, transcript_reads)
+    batches = get_batches(n_batches, transcript_reads, output_dir, transcrits_sequences, pmfs, 75)
+
     #Multiprocessing
     with Pool(n_batches) as p:
-        print(p.map(helper_reads_writer, range(n_batches)))
+        print(p.starmap(write_batch_reads, batches))
     combine_files(output_dir)
