@@ -219,6 +219,12 @@ def combine_files(output_dir):
 def truncate(seq, length=80):
     return '\n'.join([seq[n:n+length] for n in range(0, len(seq), length)])
 
+def get_dictionnary(transcrits_sequences):
+    dict_transcrits_sequences = dict()
+    for transcrit, sequence in transcrits_sequences.items():
+        dict_transcrits_sequences.update({transcrit:str(sequence)})
+    return dict_transcrits_sequences
+
 if __name__=='__main__':
     parser = argparse.ArgumentParser(description='Generate syntetic rna seq dataset')
     parser.add_argument('fasta', type=str,
@@ -250,6 +256,8 @@ if __name__=='__main__':
     else:
         pmfs =get_quality_pmfs(output_dir, total_reads)
         pickle.dump(pmfs, open(opj(output_dir, 'quality_pmfs.pkl'), 'wb'))
+
+    transcrits_sequences = get_dictionnary(transcrits_sequences)
 
     batches = get_batches(n_batches, transcript_reads, output_dir, transcrits_sequences, pmfs, 75)
 
