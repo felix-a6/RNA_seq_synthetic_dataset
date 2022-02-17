@@ -109,10 +109,10 @@ ascii_chars = ['!',
  '~']
 quality_levels = ascii_chars[:41][::-1]
 
-def nombre_reads_random(bins, numero_bins):
-    debut_bins = bins[numero_bins]
-    fin_bins = bins[numero_bins+1] 
-    return random.randint(debut_bins, fin_bins)  
+def number_reads_random(bins, bins_number):
+    start_bins = bins[bins_number]
+    end_bins = bins[bins_number+1] 
+    return random.randint(start_bins, end_bins)  
 
 def generate_reads_distribution(output_dir, max_n_reads = 4000, n_bins = 251, n_transcript = 40000, high = (1000, 500), low = (0, 500)):
     """combine 2 normal distributions high = (mean, standard dev) low = (mean, standard dev)
@@ -141,17 +141,17 @@ def generate_reads_distribution(output_dir, max_n_reads = 4000, n_bins = 251, n_
     
     return bins_made, count_adjusted
 
-def selection_transcrit(bins_made, counts, selected_transcrits): # TODO Better function name
-    selected_transcrits_copie = selected_transcrits.copy()
-    reads_par_transcrit = dict()
-    for numero_bins, count in enumerate(counts):
+def reads_per_transcript(bins_made, counts, selected_transcripts):
+    selected_transcripts_copy = selected_transcripts.copy()
+    reads_per_transcript = dict()
+    for bins_number, count in enumerate(counts):
         x = 0
         while x<count:
-            len_selected_transcrits = len(selected_transcrits_copie)
-            transcrit = selected_transcrits_copie.pop(random.randint(0, len_selected_transcrits-1))
-            reads_par_transcrit.update({transcrit:nombre_reads_random(bins_made, numero_bins)})
+            len_selected_transcripts = len(selected_transcripts_copy)
+            transcript = selected_transcripts_copy.pop(random.randint(0, len_selected_transcripts-1))
+            reads_per_transcript.update({transcript:number_reads_random(bins_made, bins_number)})
             x = x+1
-    return reads_par_transcrit
+    return reads_per_transcript
 
 def get_quality_pmfs(output_dir, total_reads, len_read = 75, quality_bins_made = np.linspace(0, 40, 40)):
     positions = list(range(1, len_read+1))
@@ -175,39 +175,39 @@ def get_quality_pmfs(output_dir, total_reads, len_read = 75, quality_bins_made =
 def get_quality_string(len_read, pmfs):
     return ''.join([np.random.choice(quality_levels[:-2], p = pmfs[n]) for n in range(0, len_read)])
 
-def make_reads(nom_transcrit, nombre_reads, len_read, transcrits_sequences):
+def make_reads(nom_transcript, number_reads, len_read, transcripts_sequences):
     reads=[]
-    transcrit = str(transcrits_sequences[nom_transcrit])
-    for _ in range(nombre_reads):
-        position_read = random.randint(0,len(transcrit)-len_read-1)
-        read = transcrit[position_read:(position_read+len_read)]
+    transcript = str(transcripts_sequences[nom_transcript])
+    for _ in range(number_reads):
+        position_read = random.randint(0,len(transcript)-len_read-1)
+        read = transcript[position_read:(position_read+len_read)]
         if len(read) == 75:
             reads.append((read, position_read))
         else:
-            print(f'len_err : {nom_transcrit}, len_read:{len(read)}, position_read:{position_read}, nombre_reads:{nombre_reads}', flush = True)
+            print(f'len_err : {nom_transcript}, len_read:{len(read)}, position_read:{position_read}, number_reads:{number_reads}', flush = True)
     return reads
 
-def get_batches(n_batches, transcript_reads, output_dir, transcrits_sequences, pmfs, len_reads):
+def get_batches(n_batches, transcript_reads, output_dir, transcripts_sequences, pmfs, len_reads):
     batch_size = int(np.ceil(1/n_batches * len(transcript_reads)))
     transcript_reads_shuffle = list(transcript_reads.items())
-    random.shuffle(transcript_reads_shuffle) #TODO enlever list comprehention
+    random.shuffle(transcript_reads_shuffle)
     batches = []
     for n in range(0,  len(transcript_reads_shuffle), batch_size):
         out_file = opj(output_dir, f'Reads_simulation_{n}.fastq')
         batch = transcript_reads_shuffle[n:n+batch_size]
-        batches.append((len_reads, batch, out_file, transcrits_sequences, pmfs))  
+        batches.append((len_reads, batch, out_file, transcripts_sequences, pmfs))  
     return batches
 
-def write_batch_reads(len_read, batch, out_file, transcrits_sequences, pmfs):
+def write_batch_reads(len_read, batch, out_file, transcripts_sequences, pmfs):
     with open(out_file,'w') as file_fastq:
         print_counter = 0
-        for n, (nom_transcrit, nombre_reads) in enumerate(batch):
+        for n, (nom_transcript, number_reads) in enumerate(batch):
             if print_counter == 100:
-                print(nom_transcrit, nombre_reads, flush = True)
-            reads = make_reads(nom_transcrit, nombre_reads, len_read, transcrits_sequences)
+                print(nom_transcript, number_reads, flush = True)
+            reads = make_reads(nom_transcript, number_reads, len_read, transcripts_sequences)
             for read, position_read in reads:
                 quality_string = get_quality_string(len_read, pmfs)
-                read_name = f'@{nom_transcrit}:{position_read}'
+                read_name = f'@{nom_transcript}:{position_read}'
                 file_fastq.write('\n'.join([read_name, read, '+', quality_string]) + '\n')
                 if print_counter == 100:
                     print(read_name, flush = True)
@@ -226,11 +226,11 @@ def combine_files(output_dir):
 def truncate(seq, length=80):
     return '\n'.join([seq[n:n+length] for n in range(0, len(seq), length)])
 
-def get_dictionnary(transcrits_sequences):
-    dict_transcrits_sequences = dict()
-    for transcrit, sequence in transcrits_sequences.items():
-        dict_transcrits_sequences.update({transcrit:str(sequence)})
-    return dict_transcrits_sequences
+def get_dictionnary(transcripts_sequences):
+    dict_transcripts_sequences = dict()
+    for transcript, sequence in transcripts_sequences.items():
+        dict_transcripts_sequences.update({transcript:str(sequence)})
+    return dict_transcripts_sequences
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser(description='Generate syntetic rna seq dataset')
@@ -238,20 +238,23 @@ if __name__=='__main__':
                         help='fasta containing all transcript sequences')
     parser.add_argument('output_dir', type=str,
                         help='directory for all outputs')
+    parser.add_argument('len_reads', type=int,
+                        help='reads length')
     parser.add_argument('n_batches', type=int,
                         help='number of batches and CPUs')
 
 
     args = parser.parse_args()
      
-    transcrits_sequences = Fasta(args.fasta)
+    transcripts_sequences = Fasta(args.fasta)
     output_dir = args.output_dir
+    len_reads = args.len_reads
     n_batches = args.n_batches
-    selected_transcrits = list(transcrits_sequences.keys())
+    selected_transcripts = list(transcripts_sequences.keys())
     bins_made, count_adjusted = generate_reads_distribution(output_dir)
 
     if not os.path.exists(opj(output_dir, 'transcript_reads.pkl')):
-        transcript_reads=selection_transcrit(bins_made, count_adjusted, selected_transcrits)
+        transcript_reads=reads_per_transcript(bins_made, count_adjusted, selected_transcripts)
         pickle.dump(transcript_reads, open(opj(output_dir, 'transcript_reads.pkl'), 'wb'))
     else:
         transcript_reads = pickle.load(open(opj(output_dir, 'transcript_reads.pkl'), 'rb'))
@@ -264,9 +267,9 @@ if __name__=='__main__':
         pmfs =get_quality_pmfs(output_dir, total_reads)
         pickle.dump(pmfs, open(opj(output_dir, 'quality_pmfs.pkl'), 'wb'))
 
-    transcrits_sequences = get_dictionnary(transcrits_sequences)
+    transcripts_sequences = get_dictionnary(transcripts_sequences)
 
-    batches = get_batches(n_batches, transcript_reads, output_dir, transcrits_sequences, pmfs, 75)
+    batches = get_batches(n_batches, transcript_reads, output_dir, transcripts_sequences, pmfs, len_reads)
 
     #Multiprocessing
     with Pool(n_batches) as p:
