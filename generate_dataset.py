@@ -153,7 +153,7 @@ def reads_per_transcript(bins_made, counts, selected_transcripts):
             x = x+1
     return reads_per_transcript
 
-def get_quality_pmfs(output_dir, total_reads, len_read = 75, quality_bins_made = np.linspace(0, 40, 40)):
+def get_quality_pmfs(output_dir, total_reads, len_read, quality_bins_made = np.linspace(0, 40, 40)):
     positions = list(range(1, len_read+1))
     scales = [0.5 + position * (2/len_read) for position in positions]
     data = []
@@ -181,7 +181,7 @@ def make_reads(nom_transcript, number_reads, len_read, transcripts_sequences):
     for _ in range(number_reads):
         position_read = random.randint(0,len(transcript)-len_read-1)
         read = transcript[position_read:(position_read+len_read)]
-        if len(read) == 75:
+        if len(read) == len_read:
             reads.append((read, position_read))
         else:
             print(f'len_err : {nom_transcript}, len_read:{len(read)}, position_read:{position_read}, number_reads:{number_reads}', flush = True)
@@ -264,7 +264,7 @@ if __name__=='__main__':
     if os.path.exists(opj(output_dir, 'quality_pmfs.pkl')):
         pmfs = pickle.load(open(opj(output_dir, 'quality_pmfs.pkl'), 'rb'))
     else:
-        pmfs =get_quality_pmfs(output_dir, total_reads)
+        pmfs =get_quality_pmfs(output_dir, total_reads, len_reads)
         pickle.dump(pmfs, open(opj(output_dir, 'quality_pmfs.pkl'), 'wb'))
 
     transcripts_sequences = get_dictionnary(transcripts_sequences)
@@ -275,3 +275,4 @@ if __name__=='__main__':
     with Pool(n_batches) as p:
         p.starmap(write_batch_reads, batches)
     combine_files(output_dir)
+    |
