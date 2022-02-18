@@ -275,4 +275,3 @@ if __name__=='__main__':
     with Pool(n_batches) as p:
         p.starmap(write_batch_reads, batches)
     combine_files(output_dir)
-    |
