@@ -1,5 +1,4 @@
 import pysam
-from matplotlib import pyplot as plt
 from pyfaidx import Fasta
 from gtfparse import read_gtf
 from multiprocessing import Pool
@@ -22,18 +21,16 @@ def stat_coverage_refimpl(samfile, chrom=None, start=None, end=None,
         yield {'chrom': chrom, 'pos': pos, 'reads_all': len(reads)}
 
 def find_dark_region(batches, n, mapping_file, gtf_file):
-    chroms = set([str(x) for x in range(1, 23)] + ['X', 'Y', 'MT'])
-    gene_coordinates = gtf_file[(gtf_file['feature']=='gene') & (gtf_file['seqname'].isin(chroms))][['seqname', 'start', 'end', 'gene_id']].to_dict(orient='records')
     zero_reads = []
     no_reads = []
-    for gene in gene_coordinates[n:batches[batches.index(n)+1]]:
-        region =  stat_coverage_refimpl(mapping_file, chrom=gene['seqname'], start=gene['start'], end=gene['end'], one_based=False)
+    for gene in list(gtf_file.items())[n:batches[batches.index(n)+1]]:
+        region =  stat_coverage_refimpl(mapping_file, chrom=gene[1][0], start=gene[1][1], end=gene[1][2], one_based=False)
         region = [x['reads_all'] for x in region]
         if not region:
             no_reads.append(region)
             continue
         if min(region) == 0:
-            zero_reads.append(gene['gene_id'])
+            zero_reads.append(gene[0])
     pickle.dump(zero_reads, open('zero_reads.pkl', 'wb'))
 
 def multi_pross_function(batches):
@@ -51,12 +48,12 @@ if __name__=='__main__':
     parser.add_argument('mapping_file', type=str,
                         help='file containing mapping output')
     parser.add_argument('gtf_file', type=str,
-                        help='file containing transcripts infos')
+                        help='pickle transcripts infos')
 
     args = parser.parse_args()
     
     mapping_file = pysam.AlignmentFile(args.mapping_file)
-    gtf_file = read_gtf(args.gtf_file)
+    gtf_file = pickle.load(open(args.gtf_file, 'rb'))
 
     batches = get_batches(24, gtf_file)
         
