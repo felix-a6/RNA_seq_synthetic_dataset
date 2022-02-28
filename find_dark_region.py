@@ -1,6 +1,5 @@
 import pysam
 from pyfaidx import Fasta
-from gtfparse import read_gtf
 from multiprocessing import Pool
 import argparse
 import pickle
