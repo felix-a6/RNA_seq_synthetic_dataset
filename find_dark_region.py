@@ -51,7 +51,7 @@ if __name__=='__main__':
 
     args = parser.parse_args()
     
-    mapping_file = pysam.AlignmentFile(args.mapping_file)
+    mapping_file = pysam.AlignmentFile(args.mapping_file, 'rb')
     gtf_file = pickle.load(open(args.gtf_file, 'rb'))
 
     batches = get_batches(24, gtf_file)
