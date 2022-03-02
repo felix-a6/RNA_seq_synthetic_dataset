@@ -21,6 +21,7 @@ def stat_coverage_refimpl(samfile, chrom=None, start=None, end=None,
         yield {'chrom': chrom, 'pos': pos, 'reads_all': len(reads)}
 
 def find_dark_region(batch, batch_num, mapping_file, output_dir):
+    mapping_file = pysam.AlignmentFile(mapping_file, 'rb')
     zero_reads = []
     no_reads = []
     for gene_name, coords in batch:
@@ -53,10 +54,9 @@ if __name__=='__main__':
 
     args = parser.parse_args()
     
-    mapping_file = pysam.AlignmentFile(args.mapping_file, 'rb')
     gtf_file = pickle.load(open(args.gtf_file, 'rb'))
 
-    batches = get_batches(24, gtf_file, mapping_file, args.output_dir)
+    batches = get_batches(24, gtf_file, args.mapping_file, args.output_dir)
         
     #Multiprocessing
     with Pool(24) as p:
