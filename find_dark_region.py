@@ -28,11 +28,11 @@ def find_dark_region(batch, batch_num, mapping_file, output_dir):
     for gene_name, coords in batch:
         chrom, start, end = coords
         region =  stat_coverage_refimpl(mapping_file, chrom, start, end, one_based=False)
-        region = [x['reads_all'] for x in region]
+        region = [x['reads_all'] for x in region][3:-3]
         if not region:
             no_reads.append(region)
             continue
-        if min(region) == 0:
+        if min(region) == 1:
             zero_reads.append(gene_name)
         if counting == 1000:
             print(gene_name, zero_reads)
