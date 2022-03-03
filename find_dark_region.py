@@ -21,6 +21,7 @@ def stat_coverage_refimpl(samfile, chrom=None, start=None, end=None,
         yield {'chrom': chrom, 'pos': pos, 'reads_all': len(reads)}
 
 def find_dark_region(batch, batch_num, mapping_file, output_dir):
+    counting = 0
     mapping_file = pysam.AlignmentFile(mapping_file, 'rb')
     zero_reads = []
     no_reads = []
@@ -33,6 +34,10 @@ def find_dark_region(batch, batch_num, mapping_file, output_dir):
             continue
         if min(region) == 0:
             zero_reads.append(gene_name)
+        if counting == 1000:
+            print(gene_name, zero_reads)
+            counting = 0
+        counting = counting + 1
     pickle.dump(zero_reads, open(f'{output_dir}/zero_reads{batch_num}.pkl', 'wb'))
 
 def get_batches(n_batches, gtf_file, mapping_file, output_dir):
