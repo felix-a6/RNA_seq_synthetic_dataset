@@ -1,5 +1,6 @@
 import pickle
 import argparse
+from collections import defaultdict
 
 def get_chrom_seq(chrom_doc_path):
     with open(chrom_doc_path, 'r') as chrom_doc:
@@ -18,7 +19,7 @@ def get_chroms_seq_dict(chroms_files_path, output_dir):
 def get_dark_region_seq(starts_list, ends_list, chrom_seq):
     darks_exons = []
     for n, (start) in enumerate(starts_list):
-        darks_exons.append(chrom_seq[start:ends_list[n]])
+        darks_exons.append(chrom_seq[start-140:ends_list[n]+140])
     return ''.join(darks_exons)
 
 def get_coords_list(dark_region_coords, gene_introns): #dark_region_coords 1 dark_region and introns_dict for 1 gene
@@ -26,7 +27,7 @@ def get_coords_list(dark_region_coords, gene_introns): #dark_region_coords 1 dar
     starts_list = [dark_start]
     ends_list = []
     for (intron_start, intron_end) in gene_introns:
-        if intron_start in range(dark_start, dark_end) and intron_end in range(dark_start, dark_end):
+        if intron_start in range(dark_start-140, dark_end+140) and intron_end in range(dark_start-140, dark_end+140):
             starts_list.append(intron_end)
             ends_list.append(intron_start)
     ends_list.append(dark_end)
@@ -47,8 +48,12 @@ def get_all_seq_dict(dark_region_coords_dict, intron_dict, output_dir):
         chrom_seq = chroms_seq_dict[chrom_num]
         for dark_coords in dark_coords_list:
             dark_regions_seq_dict = update_seq_dict(gene_name, dark_coords, gene_introns, chrom_seq, dark_regions_seq_dict)
-    dark_regions_seq_dict = {k: v for k, v in sorted(dark_regions_seq_dict.items(), key=lambda item: item[1])}
-    pickle.dump(dark_regions_seq_dict, open(f'{output_dir}sorted_dark_seq_dict.pkl', 'wb'))
+
+    sorted_dark_region_seq_dict = defaultdict(list)
+    for key, val in sorted(dark_regions_seq_dict.items()):
+        sorted_dark_region_seq_dict[val].append(key)
+
+    pickle.dump(sorted_dark_region_seq_dict, open(f'{output_dir}sorted_dark_seq_dict.pkl', 'wb'))
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser(description='Dark regions data analysis')
