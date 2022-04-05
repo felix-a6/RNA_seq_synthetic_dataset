@@ -4,6 +4,7 @@ from gtfparse import read_gtf
 import pysam
 import os
 import numpy as np
+import argparse
 
 def get_1_read_count(input_path, files_name):
     all_1_read_count = []
@@ -66,7 +67,7 @@ def get_dark_region_coords(gene_coords, mapping_file):
 def get_all_dark_region(gtf_file, input_path, files_name, mapping_file, output_dir):
     all_dark_regions = dict()
     for gene_coords in get_dark_genes_coords(gtf_file, input_path, files_name):
-        all_dark_regions.update({gene_coords['gene_id']:(gene_coords['seqname'], get_dark_region_coords(gene_coords, mapping_file))})
+        all_dark_regions.update({gene_coords['gene_id']:(gene_coords['seqname'], gene_coords['strand'], get_dark_region_coords(gene_coords, mapping_file))})
     pickle.dump(all_dark_regions, open(f'{output_dir}dark_region_coords.pkl', 'wb'))
 
 if __name__=='__main__':
