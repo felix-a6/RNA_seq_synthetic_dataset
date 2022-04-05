@@ -17,7 +17,7 @@ def get_1_read_count(input_path, files_name):
 
 def get_dark_genes_coords(gtf_file, input_path, files_name):
     chroms = set([str(x) for x in range(1, 23)] + ['X', 'Y', 'MT'])
-    gene_coordinates = gtf_file[(gtf_file['feature']=='gene') & (gtf_file['seqname'].isin(chroms))][['seqname', 'start', 'end', 'gene_id']].to_dict(orient='records')
+    gene_coordinates = gtf_file[(gtf_file['feature']=='gene') & (gtf_file['seqname'].isin(chroms))][['seqname','strand', 'start', 'end', 'gene_id']].to_dict(orient='records')
     dark_gene_coords = []
     for coords in gene_coordinates:
         if coords['gene_id'] in get_1_read_count(input_path, files_name):
