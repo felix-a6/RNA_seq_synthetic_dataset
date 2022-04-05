@@ -51,6 +51,10 @@ def get_dark_region_coords(gene_coords, mapping_file):
     region =  stat_coverage_refimpl(mapping_file, chrom=gene_coords['seqname'], start=gene_coords['start'], end=gene_coords['end'], one_based=False)
     region = list(region)
 
+    if not region:
+        print('no_reads:', gene_coords)
+        return []
+
     (pos, read_counts) = zip(*[(nt['pos'], nt['reads_all']) for nt in region])
 
     pos = np.array(pos)
