@@ -72,7 +72,7 @@ def get_all_dark_region(gtf_file, input_path, files_name, mapping_file, output_d
     all_dark_regions = dict()
     for gene_coords in get_dark_genes_coords(gtf_file, input_path, files_name):
         all_dark_regions.update({gene_coords['gene_id']:(gene_coords['seqname'], gene_coords['strand'], get_dark_region_coords(gene_coords, mapping_file))})
-    pickle.dump(all_dark_regions, open(f'{output_dir}dark_region_coords.pkl', 'wb'))
+    pickle.dump(all_dark_regions, open(f'{output_dir}dark_region_coords_new.pkl', 'wb'))
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser(description='Dark regions data analysis')
