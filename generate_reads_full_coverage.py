@@ -7,15 +7,12 @@ def truncate(seq, length=80):
 
 def write_all_reads_fasta(transcript_fasta, len_read, out_file, step_size):
     with open(out_file,'w') as all_reads_fasta:
-        too_short = []
         for name, seq in transcript_fasta.items():
             if len(seq) < 150 :
-                too_short.append(name)
                 continue
             reads = [seq[position_read:(position_read+len_read)] for position_read in range(0, len(seq)-len_read, step_size)]
             for read in reads:
                 all_reads_fasta.write('>' + name + '\n' + truncate(str(read),length=80) + '\n')
-        pickle.dump(too_short, open(out_file, 'wb'))
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser(description='Generate syntetic rna seq dataset full coverage')
