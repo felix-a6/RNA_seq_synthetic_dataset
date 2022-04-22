@@ -15,7 +15,7 @@ def write_all_reads_fasta(transcript_fasta, len_read, out_file, step_size):
             reads = [seq[position_read:(position_read+len_read)] for position_read in range(0, len(seq)-len_read, step_size)]
             for read in reads:
                 all_reads_fasta.write('>' + name + '\n' + truncate(str(read),length=80) + '\n')
-        pickle.dump(too_short, open(f'{out_file}_short', 'wb'))
+        pickle.dump(too_short, open(out_file, 'wb'))
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser(description='Generate syntetic rna seq dataset full coverage')
