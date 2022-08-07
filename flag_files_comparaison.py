@@ -17,6 +17,8 @@ if __name__=='__main__':
     parser.add_argument('output_dir', type=int,
                         help='output directory')
 
+    args = parser.parse_args()
+
     output_dir = args.output_dir
 
     set_150 = create_set(args.pickle_150)
